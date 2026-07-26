@@ -15,6 +15,25 @@ const bridge = spawn(bridgePath, ["--stdio"], {
 const pending = [];
 let buffer = "";
 
+function refBridge() {
+  bridge.ref();
+  bridge.stdin.ref?.();
+  bridge.stdout.ref?.();
+}
+
+function unrefBridgeWhenIdle() {
+  if (pending.length !== 0) return;
+  bridge.stdin.unref?.();
+  bridge.stdout.unref?.();
+  bridge.unref();
+}
+
+function rejectPending(error) {
+  while (pending.length > 0) {
+    pending.shift().reject(error);
+  }
+}
+
 bridge.stdout.setEncoding("utf8");
 bridge.stdout.on("data", (chunk) => {
   buffer += chunk;
@@ -26,11 +45,19 @@ bridge.stdout.on("data", (chunk) => {
     const next = pending.shift();
     if (!next) continue;
     next.resolve(JSON.parse(line));
+    unrefBridgeWhenIdle();
   }
+});
+bridge.once("error", rejectPending);
+bridge.once("exit", (code, signal) => {
+  rejectPending(
+    new Error(`tasknotes-spec-bridge exited before replying (code=${code}, signal=${signal})`),
+  );
 });
 
 function send(operation, input) {
   return new Promise((resolve, reject) => {
+    refBridge();
     pending.push({ resolve, reject });
     bridge.stdin.write(`${JSON.stringify({ operation, input })}\n`);
   });
