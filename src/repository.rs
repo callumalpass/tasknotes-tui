@@ -582,7 +582,7 @@ impl TaskRepository {
             Value::String(now.clone()),
         );
         let compat = collection
-            .types
+            .types()
             .get("task")
             .map(type_def_to_create_compat)
             .and_then(|task_type| {
