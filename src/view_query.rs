@@ -40,7 +40,7 @@ impl ViewEvalSupport {
         Self {
             all_files: Arc::new(all_files),
             backlinks_index: Arc::new(backlinks_index),
-            types: Arc::new(collection.types.clone()),
+            types: Arc::new(collection.types().clone()),
             type_names_by_path: Arc::new(type_names_by_path),
         }
     }
@@ -238,6 +238,7 @@ fn build_eval_context(
         backlinks_index: Some(support.backlinks_index.clone()),
         type_names: support.type_names_by_path.get(&task.path).cloned(),
         types: Some(support.types.clone()),
+        note_namespace_source: Default::default(),
         string_concat: false,
     }
 }

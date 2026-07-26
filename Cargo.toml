@@ -21,7 +21,7 @@ chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = "0.10"
 clap = { version = "4", features = ["derive"] }
 crossterm = "0.28"
-mdbase = { path = "../mdbase-rs", version = "=0.3.0-alpha.1" }
+mdbase = { path = "../mdbase-rs", version = "=0.4.0-rc.1" }
 ratatui = "0.29"
 regex = "1"
 rrule = "0.13"
