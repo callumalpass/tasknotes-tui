@@ -4,7 +4,10 @@ import {
   executeConformanceOperation as fallbackExecute,
 } from "../../mdbase-tasknotes/dist/conformance.js";
 
-const bridge = spawn("../tasknotes-tui/target/debug/tasknotes-spec-bridge", ["--stdio"], {
+const bridgePath =
+  process.env.TASKNOTES_TUI_BRIDGE_PATH ??
+  "../tasknotes-tui/target/debug/tasknotes-spec-bridge";
+const bridge = spawn(bridgePath, ["--stdio"], {
   cwd: new URL("..", import.meta.url),
   stdio: ["pipe", "pipe", "inherit"],
 });
