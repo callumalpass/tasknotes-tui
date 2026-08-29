@@ -89,7 +89,7 @@ impl TaskRepository {
 
     pub fn build_view_eval_support(&self) -> anyhow::Result<ViewEvalSupport> {
         let collection = self.collection()?;
-        Ok(ViewEvalSupport::build(&collection))
+        ViewEvalSupport::build(&collection)
     }
 
     pub fn absolute_task_path(&self, task: &TaskRecord) -> PathBuf {
@@ -628,7 +628,10 @@ impl TaskRepository {
     }
 
     pub fn canonical_project_link_for_task(&self, task: &TaskRecord) -> anyhow::Result<String> {
-        let all_files = self.collection()?.build_all_files_data();
+        let all_files = self
+            .collection()?
+            .build_all_files_data()
+            .map_err(|error| anyhow!("failed to capture collection records: {error}"))?;
         let basename = Path::new(&task.path)
             .file_stem()
             .and_then(|stem| stem.to_str())
@@ -658,7 +661,10 @@ impl TaskRepository {
     }
 
     pub fn resolve_project_paths(&self, task: &TaskRecord) -> anyhow::Result<Vec<String>> {
-        let all_files = self.collection()?.build_all_files_data();
+        let all_files = self
+            .collection()?
+            .build_all_files_data()
+            .map_err(|error| anyhow!("failed to capture collection records: {error}"))?;
         Ok(resolve_task_project_paths(task, &all_files))
     }
 
