@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- fix recurring tasks being rescheduled a day early in timezones ahead of UTC when the rule has a date-only or floating `DTSTART` (#8; diagnosis and fix by @kehao-chen)
+
 ## v0.1.3 - 2026-03-31
 
 - add active project context, including `Shift-P` toggle behavior and project-aware quick create

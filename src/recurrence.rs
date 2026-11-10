@@ -177,12 +177,28 @@ fn get_next_occurrence_date(
 ) -> anyhow::Result<Option<DateTime<Utc>>> {
     let set = parse_rrule_set(recurrence, source_date)?;
     for dt in set.into_iter().take(2000) {
-        let utc = dt.with_timezone(&Utc);
+        let utc = occurrence_to_utc(&dt);
         if utc > after_date || (inclusive && utc == after_date) {
             return Ok(Some(utc));
         }
     }
     Ok(None)
+}
+
+/// Convert an rrule occurrence to the UTC representation used for scheduling.
+///
+/// A date-only or floating DTSTART (no `Z`, no TZID) makes rrule generate
+/// occurrences in `Tz::Local`. TaskNotes treats those values as calendar
+/// dates/wall times stored at UTC midnight, so keep the wall time instead of
+/// converting the instant: converting would move dates back a day in
+/// timezones ahead of UTC (issue #8). Occurrences with a real timezone (`Z`
+/// or TZID) are proper instants and are converted as before.
+fn occurrence_to_utc(dt: &DateTime<rrule::Tz>) -> DateTime<Utc> {
+    if dt.timezone().is_local() {
+        DateTime::<Utc>::from_naive_utc_and_offset(dt.naive_local(), Utc)
+    } else {
+        dt.with_timezone(&Utc)
+    }
 }
 
 fn parse_rrule_set(rule: &str, source_date: &str) -> anyhow::Result<RRuleSet> {
@@ -332,3 +348,34 @@ pub fn effective_state(completed: &[String], skipped: &[String], target: &str) -
 }
 
 use chrono::Timelike;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn first_occurrence(rule: &str) -> DateTime<Utc> {
+        let set: RRuleSet = rule.parse().expect("valid rule");
+        occurrence_to_utc(&set.into_iter().next().expect("an occurrence"))
+    }
+
+    #[test]
+    fn utc_dtstart_occurrences_are_unchanged() {
+        assert_eq!(
+            first_occurrence("DTSTART:20261108T020000Z\nRRULE:FREQ=WEEKLY;BYDAY=SU").to_rfc3339(),
+            "2026-11-08T02:00:00+00:00"
+        );
+    }
+
+    #[test]
+    fn tzid_dtstart_occurrences_keep_their_instant() {
+        // 09:00 in New York is 14:00Z. Keeping the wall time here (09:00Z)
+        // would shift the instant, so only Tz::Local keeps its wall time.
+        assert_eq!(
+            first_occurrence(
+                "DTSTART;TZID=America/New_York:20261108T090000\nRRULE:FREQ=WEEKLY;BYDAY=SU"
+            )
+            .to_rfc3339(),
+            "2026-11-08T14:00:00+00:00"
+        );
+    }
+}
