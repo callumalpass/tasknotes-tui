@@ -24,8 +24,10 @@ pub struct ViewEvalSupport {
 }
 
 impl ViewEvalSupport {
-    pub fn build(collection: &Collection) -> Self {
-        let all_files = collection.build_all_files_data();
+    pub fn build(collection: &Collection) -> anyhow::Result<Self> {
+        let all_files = collection
+            .build_all_files_data()
+            .map_err(|error| anyhow::anyhow!("failed to capture collection records: {error}"))?;
         let backlinks_index = collection.build_backlinks_index(&all_files);
         let type_names_by_path = all_files
             .iter()
@@ -37,12 +39,12 @@ impl ViewEvalSupport {
             })
             .collect();
 
-        Self {
+        Ok(Self {
             all_files: Arc::new(all_files),
             backlinks_index: Arc::new(backlinks_index),
             types: Arc::new(collection.types().clone()),
             type_names_by_path: Arc::new(type_names_by_path),
-        }
+        })
     }
 
     #[cfg(test)]
