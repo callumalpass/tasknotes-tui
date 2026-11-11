@@ -705,7 +705,7 @@ impl TaskRepository {
                 normalized.insert(field.to_string(), Value::String(value.to_string()));
             }
             None => {
-                normalized.remove(field);
+                normalized.insert(field.to_string(), Value::Null);
             }
         }
         self.write_task_update(task, normalized)
@@ -723,7 +723,7 @@ impl TaskRepository {
                 normalized.insert(field.to_string(), Value::String(value.to_string()));
             }
             None => {
-                normalized.remove(field);
+                normalized.insert(field.to_string(), Value::Null);
             }
         }
         self.write_task_update(task, normalized)
@@ -1713,5 +1713,28 @@ archive:
             .list_tasks(TaskFilter::All, &today_local())
             .unwrap()
             .is_empty());
+    }
+
+    #[test]
+    fn update_date_field_clears_date_when_none() {
+        let tmp = tempdir().unwrap();
+        write_collection(tmp.path());
+
+        let repo = TaskRepository::open(tmp.path()).unwrap();
+        repo.create_task("Date test").unwrap();
+        let tasks = repo.list_tasks(TaskFilter::Open, &today_local()).unwrap();
+        assert_eq!(tasks.len(), 1);
+
+        let updated = repo
+            .update_date_field(&tasks[0], "due", Some("2026-08-01"))
+            .unwrap();
+        assert_eq!(updated.due.as_deref(), Some("2026-08-01"));
+
+        let cleared = repo.update_date_field(&updated, "due", None).unwrap();
+        assert_eq!(cleared.due, None);
+
+        // Verify re-reading task from disk also has due == None
+        let reloaded = repo.read_task(&cleared.path).unwrap();
+        assert_eq!(reloaded.due, None);
     }
 }
