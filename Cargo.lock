@@ -1122,10 +1122,10 @@ dependencies = [
 [[package]]
 name = "mdbase"
 version = "0.4.0-rc.1"
+source = "git+https://github.com/callumalpass/mdbase-rs.git?rev=b3df3ebd7f10191e80131d86b1e63e17a8fa697f#b3df3ebd7f10191e80131d86b1e63e17a8fa697f"
 dependencies = [
  "chrono",
  "chrono-tz 0.10.4",
- "clap",
  "fancy-regex 0.14.0",
  "fs2",
  "jsonschema",
